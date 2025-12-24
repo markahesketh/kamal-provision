@@ -25,6 +25,32 @@ module Kamal
           puts Kamal::Provision::VERSION
         end
 
+        desc "init", "Initialize x-provision configuration in deploy config"
+        def init
+          config_path = options[:config_file]
+
+          unless File.exist?(config_path)
+            raise ProvisionError, "Config file not found: #{config_path}"
+          end
+
+          content = File.read(config_path)
+
+          if content.match?(/^x-provision:/m)
+            say "x-provision already exists in #{config_path}", :yellow
+            return
+          end
+
+          provision_block = <<~YAML
+
+            x-provision:
+              keys:
+                - ~/.ssh/id_rsa.pub
+          YAML
+
+          File.write(config_path, content + provision_block)
+          say "Added x-provision configuration to #{config_path}", :green
+        end
+
         private
 
         def provision_users
