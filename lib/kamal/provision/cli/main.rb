@@ -45,6 +45,10 @@ module Kamal
             x-provision:
               keys:
                 - ~/.ssh/id_rsa.pub
+              # Disable root SSH login when provisioning a non-root user (default: true)
+              # disable_root_login: true
+              # Disable password authentication (default: true)
+              # disable_password_authentication: true
           YAML
 
           File.write(config_path, content + provision_block)
@@ -109,6 +113,9 @@ module Kamal
             execute(*user_cmd.add_to_docker_group(user))
           end
 
+          # Harden SSH configuration
+          harden_ssh(ssh_host)
+
           say "    Done provisioning #{host}", :green
         end
 
@@ -156,6 +163,32 @@ module Kamal
         def test_connection(ssh_host)
           on(ssh_host) do
             test("true")
+          end
+        end
+
+        def harden_ssh(ssh_host)
+          ssh_config = PROVISIONER.ssh_config
+          user_cmd = PROVISIONER.user
+
+          on(ssh_host) do
+            changes_made = false
+
+            if ssh_config.disable_root_login?
+              info "Disabling root SSH login..."
+              execute(*user_cmd.disable_root_login)
+              changes_made = true
+            end
+
+            if ssh_config.disable_password_authentication?
+              info "Disabling password authentication..."
+              execute(*user_cmd.disable_password_authentication)
+              changes_made = true
+            end
+
+            if changes_made
+              info "Restarting SSH service..."
+              execute(*user_cmd.restart_sshd)
+            end
           end
         end
       end

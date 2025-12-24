@@ -57,6 +57,30 @@ module Kamal
             [:test, "-s", "/home/#{username}/.ssh/authorized_keys"]
           end
         end
+
+        def disable_root_login
+          [
+            :sudo, :sh, "-c",
+            "sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && " \
+            "grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin no' | sudo tee -a /etc/ssh/sshd_config > /dev/null"
+          ]
+        end
+
+        def disable_password_authentication
+          [
+            :sudo, :sh, "-c",
+            "sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && " \
+            "grep -q '^PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | sudo tee -a /etc/ssh/sshd_config > /dev/null"
+          ]
+        end
+
+        def restart_sshd
+          # Try different service names for sshd across different distributions
+          [
+            :sudo, :sh, "-c",
+            "systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null || service ssh restart 2>/dev/null || service sshd restart"
+          ]
+        end
       end
     end
   end

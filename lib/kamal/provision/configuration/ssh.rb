@@ -36,6 +36,20 @@ module Kamal
           keys_from_files + public_key_data
         end
 
+        # Whether to disable root login (defaults to true when user is not root)
+        def disable_root_login?
+          return false if user == "root"
+
+          value = provision_config["disable_root_login"] || provision_config[:disable_root_login]
+          value.nil? ? true : value
+        end
+
+        # Whether to disable password authentication (defaults to true)
+        def disable_password_authentication?
+          value = provision_config["disable_password_authentication"] || provision_config[:disable_password_authentication]
+          value.nil? ? true : value
+        end
+
         # Delegate everything else to Kamal's SSH config
         def method_missing(method, *args, &block)
           if kamal_ssh.respond_to?(method)

@@ -101,6 +101,62 @@ class Kamal::Provision::Configuration::SshTest < Minitest::Test
     refute ssh_config.respond_to?(:nonexistent_method)
   end
 
+  def test_disable_root_login_defaults_to_true_when_user_is_not_root
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({}, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    assert ssh_config.disable_root_login?
+  end
+
+  def test_disable_root_login_defaults_to_false_when_user_is_root
+    kamal_ssh = MockKamalSsh.new("root")
+    kamal_config = MockKamalConfig.new({}, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    refute ssh_config.disable_root_login?
+  end
+
+  def test_disable_root_login_can_be_explicitly_set_to_false
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({ "disable_root_login" => false }, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    refute ssh_config.disable_root_login?
+  end
+
+  def test_disable_root_login_can_be_explicitly_set_to_true
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({ "disable_root_login" => true }, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    assert ssh_config.disable_root_login?
+  end
+
+  def test_disable_password_authentication_defaults_to_true
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({}, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    assert ssh_config.disable_password_authentication?
+  end
+
+  def test_disable_password_authentication_can_be_set_to_false
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({ "disable_password_authentication" => false }, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    refute ssh_config.disable_password_authentication?
+  end
+
+  def test_disable_password_authentication_can_be_set_to_true
+    kamal_ssh = MockKamalSsh.new("deploy")
+    kamal_config = MockKamalConfig.new({ "disable_password_authentication" => true }, kamal_ssh)
+    ssh_config = Kamal::Provision::Configuration::Ssh.new(kamal_config)
+
+    assert ssh_config.disable_password_authentication?
+  end
+
   private
 
   def build_ssh_config(provision_config)

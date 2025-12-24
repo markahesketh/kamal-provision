@@ -81,6 +81,38 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_equal [:test, "-s", "/home/deploy/.ssh/authorized_keys"], result
   end
 
+  def test_disable_root_login_modifies_sshd_config
+    result = @user.disable_root_login
+
+    assert_equal :sudo, result[0]
+    assert_equal :sh, result[1]
+    assert_equal "-c", result[2]
+    assert_includes result[3], "PermitRootLogin no"
+    assert_includes result[3], "/etc/ssh/sshd_config"
+  end
+
+  def test_disable_password_authentication_modifies_sshd_config
+    result = @user.disable_password_authentication
+
+    assert_equal :sudo, result[0]
+    assert_equal :sh, result[1]
+    assert_equal "-c", result[2]
+    assert_includes result[3], "PasswordAuthentication no"
+    assert_includes result[3], "/etc/ssh/sshd_config"
+  end
+
+  def test_restart_sshd_tries_multiple_service_names
+    result = @user.restart_sshd
+
+    assert_equal :sudo, result[0]
+    assert_equal :sh, result[1]
+    assert_equal "-c", result[2]
+    assert_includes result[3], "systemctl restart sshd"
+    assert_includes result[3], "systemctl restart ssh"
+    assert_includes result[3], "service ssh restart"
+    assert_includes result[3], "service sshd restart"
+  end
+
   private
 
   def mock_config
