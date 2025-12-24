@@ -52,4 +52,20 @@ echo "==> Testing SSH as provisioned user on port 2200..."
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2200 kamal@127.0.0.1 "echo 'SSH as kamal successful on port 2200!'"
 
 echo ""
+echo "==> Test 3: Provisioning with no keys configured (should use root's keys)..."
+cd "$SCRIPT_DIR"
+
+# Remove the kamal user so we can test provisioning again
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "userdel -r kamal 2>/dev/null || true"
+
+cd "$PROJECT_DIR"
+bundle exec exe/kamal-provision provision -c test/docker/config_no_keys.yml
+
+echo "==> Verifying user was created with root's keys..."
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "id kamal && groups kamal"
+
+echo "==> Testing SSH as provisioned user (using root's keys)..."
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 kamal@127.0.0.1 "echo 'SSH as kamal successful using root keys!'"
+
+echo ""
 echo "==> All tests passed!"

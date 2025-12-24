@@ -1,0 +1,18 @@
+service: test-app
+image: test-app
+
+ssh:
+  user: kamal
+  port: 2222
+
+servers:
+  web:
+    - 127.0.0.1
+
+registry:
+  server: localhost:5555
+
+builder:
+  arch: arm64
+
+# No x-provision section - should use root's authorized_keys

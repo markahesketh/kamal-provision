@@ -30,20 +30,16 @@ module Kamal
         def provision_users
           hosts = PROVISIONER.config.all_hosts
           user = PROVISIONER.config.ssh.user
-          public_keys = PROVISIONER.ssh_config.public_keys
-
-          if public_keys.empty?
-            raise ProvisionError, "No public keys configured. Set x-provision.keys or x-provision.key_data in config/deploy.yml"
-          end
+          configured_keys = PROVISIONER.ssh_config.public_keys
 
           say "Creating user '#{user}' on #{hosts.size} host(s)...", :magenta
 
           hosts.each do |host|
-            provision_user_on_host(host, user, public_keys)
+            provision_user_on_host(host, user, configured_keys)
           end
         end
 
-        def provision_user_on_host(host, user, public_keys)
+        def provision_user_on_host(host, user, configured_keys)
           say "  Provisioning #{host}...", :magenta
 
           ssh_host, _connected_as = establish_connection(host, user)
@@ -59,6 +55,23 @@ module Kamal
 
             # Ensure .ssh directory exists with correct permissions
             execute(*user_cmd.ensure_ssh_directory(user))
+
+            # Determine which keys to use
+            public_keys = configured_keys
+            if public_keys.empty?
+              # Check if user already has authorized_keys
+              if test(*user_cmd.has_authorized_keys?(user))
+                info "User #{user} already has authorized_keys, skipping key setup"
+              else
+                # Use root's authorized_keys as default
+                info "No keys configured, using root's authorized_keys..."
+                root_keys = capture(*user_cmd.read_authorized_keys("root")).strip
+                if root_keys.empty?
+                  raise ProvisionError, "No public keys configured and root has no authorized_keys"
+                end
+                public_keys = root_keys.split("\n").map(&:strip).reject(&:empty?)
+              end
+            end
 
             # Add public keys
             public_keys.each do |key|

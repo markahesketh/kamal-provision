@@ -41,6 +41,22 @@ module Kamal
         def add_to_docker_group(username)
           [:sudo, :usermod, "-a", "-G", "docker", username]
         end
+
+        def read_authorized_keys(username)
+          if username == "root"
+            [:cat, "/root/.ssh/authorized_keys"]
+          else
+            [:sudo, :cat, "/home/#{username}/.ssh/authorized_keys"]
+          end
+        end
+
+        def has_authorized_keys?(username)
+          if username == "root"
+            [:test, "-s", "/root/.ssh/authorized_keys"]
+          else
+            [:test, "-s", "/home/#{username}/.ssh/authorized_keys"]
+          end
+        end
       end
     end
   end

@@ -57,6 +57,30 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_equal [:sudo, :usermod, "-a", "-G", "docker", "deploy"], result
   end
 
+  def test_read_authorized_keys_for_root
+    result = @user.read_authorized_keys("root")
+
+    assert_equal [:cat, "/root/.ssh/authorized_keys"], result
+  end
+
+  def test_read_authorized_keys_for_non_root_user
+    result = @user.read_authorized_keys("deploy")
+
+    assert_equal [:sudo, :cat, "/home/deploy/.ssh/authorized_keys"], result
+  end
+
+  def test_has_authorized_keys_for_root
+    result = @user.has_authorized_keys?("root")
+
+    assert_equal [:test, "-s", "/root/.ssh/authorized_keys"], result
+  end
+
+  def test_has_authorized_keys_for_non_root_user
+    result = @user.has_authorized_keys?("deploy")
+
+    assert_equal [:test, "-s", "/home/deploy/.ssh/authorized_keys"], result
+  end
+
   private
 
   def mock_config
