@@ -45,10 +45,6 @@ module Kamal
             x-provision:
               keys:
                 - ~/.ssh/id_rsa.pub
-              # Disable root SSH login when provisioning a non-root user (default: true)
-              # disable_root_login: true
-              # Disable password authentication (default: true)
-              # disable_password_authentication: true
           YAML
 
           File.write(config_path, content + provision_block)
