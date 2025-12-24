@@ -16,7 +16,7 @@ module Kamal
           commands
             .compact
             .collect { |command| Array(command) + [by] }.flatten
-            .tap { |combined| combined.pop }
+            .tap(&:pop)
         end
 
         def pipe(*commands)

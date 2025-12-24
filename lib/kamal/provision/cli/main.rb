@@ -29,9 +29,7 @@ module Kamal
         def init
           config_path = options[:config_file]
 
-          unless File.exist?(config_path)
-            raise ProvisionError, "Config file not found: #{config_path}"
-          end
+          raise ProvisionError, "Config file not found: #{config_path}" unless File.exist?(config_path)
 
           content = File.read(config_path)
 
@@ -92,9 +90,8 @@ module Kamal
                 # Use root's authorized_keys as default
                 info "No keys configured, using root's authorized_keys..."
                 root_keys = capture(*user_cmd.read_authorized_keys("root")).strip
-                if root_keys.empty?
-                  raise ProvisionError, "No public keys configured and root has no authorized_keys"
-                end
+                raise ProvisionError, "No public keys configured and root has no authorized_keys" if root_keys.empty?
+
                 public_keys = root_keys.split("\n").map(&:strip).reject(&:empty?)
               end
             end
@@ -125,23 +122,17 @@ module Kamal
           ].compact
 
           attempts.each_with_index do |attempt, index|
-            begin
-              ssh_host = build_ssh_host(host, attempt[:user], attempt[:port], ssh_options)
-              test_connection(ssh_host)
-              say "    Connected as #{attempt[:user]}@#{host}:#{attempt[:port]}", :magenta
-              return [ssh_host, attempt[:user]]
-            rescue SSHKit::Runner::ExecuteError => e
-              if e.cause.is_a?(Net::SSH::AuthenticationFailed) || e.cause.is_a?(Errno::ECONNREFUSED)
-                if index < attempts.size - 1
-                  next_attempt = attempts[index + 1]
-                  say "    Could not connect as #{attempt[:user]}@#{host}:#{attempt[:port]}, trying #{next_attempt[:user]}@#{host}:#{next_attempt[:port]}...", :yellow
-                else
-                  raise
-                end
-              else
-                raise
-              end
-            end
+            ssh_host = build_ssh_host(host, attempt[:user], attempt[:port], ssh_options)
+            test_connection(ssh_host)
+            say "    Connected as #{attempt[:user]}@#{host}:#{attempt[:port]}", :magenta
+            return [ssh_host, attempt[:user]]
+          rescue SSHKit::Runner::ExecuteError => e
+            raise unless e.cause.is_a?(Net::SSH::AuthenticationFailed) || e.cause.is_a?(Errno::ECONNREFUSED)
+            raise unless index < attempts.size - 1
+
+            next_attempt = attempts[index + 1]
+            say "    Could not connect as #{attempt[:user]}@#{host}:#{attempt[:port]}, trying #{next_attempt[:user]}@#{host}:#{next_attempt[:port]}...",
+                :yellow
           end
         end
 

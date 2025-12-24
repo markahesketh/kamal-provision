@@ -16,9 +16,9 @@ module Kamal
         class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
         class_option :quiet, type: :boolean, aliases: "-q", desc: "Minimal logging"
         class_option :config_file, aliases: "-c", default: "config/deploy.yml",
-                     desc: "Path to config file"
+                                   desc: "Path to config file"
         class_option :destination, aliases: "-d",
-                     desc: "Specify destination (staging -> deploy.staging.yml)"
+                                   desc: "Specify destination (staging -> deploy.staging.yml)"
 
         private
 
@@ -29,9 +29,7 @@ module Kamal
               provisioner.verbosity = :debug
             end
 
-            if options[:quiet]
-              provisioner.verbosity = :error
-            end
+            provisioner.verbosity = :error if options[:quiet]
 
             provisioner.configure(
               config_file: Pathname.new(File.expand_path(options[:config_file])),

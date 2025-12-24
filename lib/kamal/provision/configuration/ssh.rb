@@ -27,9 +27,8 @@ module Kamal
         def public_keys
           keys_from_files = public_key_paths.map do |path|
             expanded = File.expand_path(path)
-            unless File.exist?(expanded)
-              raise Kamal::Provision::Error, "Public key file not found: #{path}"
-            end
+            raise Kamal::Provision::Error, "Public key file not found: #{path}" unless File.exist?(expanded)
+
             File.read(expanded).strip
           end
 
