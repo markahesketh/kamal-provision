@@ -75,32 +75,42 @@ module Kamal
 
         def establish_connection(host, user)
           ssh_options = PROVISIONER.config.ssh.options
+          configured_port = ssh_options[:port] || 22
 
-          # Try connecting as configured user first
-          begin
-            ssh_host = build_ssh_host(host, user, ssh_options)
-            test_connection(ssh_host)
-            say "    Connected as #{user}@#{host}", :magenta
-            return [ssh_host, user]
-          rescue SSHKit::Runner::ExecuteError => e
-            if e.cause.is_a?(Net::SSH::AuthenticationFailed) || e.cause.is_a?(Errno::ECONNREFUSED)
-              say "    Could not connect as #{user}, falling back to root...", :yellow
-            else
-              raise
+          # Try combinations: configured user first, then root; configured port first, then 22
+          attempts = [
+            { user: user, port: configured_port },
+            ({ user: user, port: 22 } if configured_port != 22),
+            { user: "root", port: configured_port },
+            ({ user: "root", port: 22 } if configured_port != 22)
+          ].compact
+
+          attempts.each_with_index do |attempt, index|
+            begin
+              ssh_host = build_ssh_host(host, attempt[:user], attempt[:port], ssh_options)
+              test_connection(ssh_host)
+              say "    Connected as #{attempt[:user]}@#{host}:#{attempt[:port]}", :magenta
+              return [ssh_host, attempt[:user]]
+            rescue SSHKit::Runner::ExecuteError => e
+              if e.cause.is_a?(Net::SSH::AuthenticationFailed) || e.cause.is_a?(Errno::ECONNREFUSED)
+                if index < attempts.size - 1
+                  next_attempt = attempts[index + 1]
+                  say "    Could not connect as #{attempt[:user]}@#{host}:#{attempt[:port]}, trying #{next_attempt[:user]}@#{host}:#{next_attempt[:port]}...", :yellow
+                else
+                  raise
+                end
+              else
+                raise
+              end
             end
           end
-
-          # Fall back to root for initial provisioning
-          ssh_host = build_ssh_host(host, "root", ssh_options)
-          test_connection(ssh_host)
-          say "    Connected as root@#{host} (initial provisioning)", :magenta
-          [ssh_host, "root"]
         end
 
-        def build_ssh_host(host, user, ssh_options)
+        def build_ssh_host(host, user, port, ssh_options)
           SSHKit::Host.new(host).tap do |h|
             h.user = user
-            h.ssh_options = ssh_options.except(:user)
+            h.port = port
+            h.ssh_options = ssh_options.except(:user, :port)
           end
         end
 

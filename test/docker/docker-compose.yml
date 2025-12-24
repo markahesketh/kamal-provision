@@ -3,5 +3,6 @@ services:
     build: .
     ports:
       - "2222:22"
+      - "2200:22"
     volumes:
       - ~/.ssh/id_rsa.pub:/root/.ssh/authorized_keys:ro
