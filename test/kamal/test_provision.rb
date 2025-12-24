@@ -7,7 +7,8 @@ class Kamal::TestProvision < Minitest::Test
     refute_nil ::Kamal::Provision::VERSION
   end
 
-  def test_it_does_something_useful
-    assert false
+  def test_error_class_exists
+    assert_kind_of Class, Kamal::Provision::Error
+    assert Kamal::Provision::Error < StandardError
   end
 end

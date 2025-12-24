@@ -1,0 +1,20 @@
+service: test-app
+image: test-app
+
+ssh:
+  user: kamal
+  port: 2222
+
+servers:
+  web:
+    - 127.0.0.1
+
+registry:
+  server: localhost:5555
+
+builder:
+  arch: arm64
+
+x-provision:
+  keys:
+    - ~/.ssh/id_rsa.pub
