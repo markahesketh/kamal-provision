@@ -14,6 +14,13 @@ trap cleanup EXIT
 
 cd "$SCRIPT_DIR"
 
+# Ensure SSH key exists for tests
+if [ ! -f ~/.ssh/id_rsa ]; then
+  echo "==> Generating SSH key for tests..."
+  mkdir -p ~/.ssh
+  ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" -q
+fi
+
 echo "==> Building and starting test server..."
 docker compose up -d --build
 
