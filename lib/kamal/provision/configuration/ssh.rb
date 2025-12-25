@@ -40,14 +40,24 @@ module Kamal
         def disable_root_login?
           return false if user == "root"
 
-          value = provision_config["disable_root_login"] || provision_config[:disable_root_login]
-          value.nil? ? true : value
+          if provision_config.key?("disable_root_login")
+            provision_config["disable_root_login"]
+          elsif provision_config.key?(:disable_root_login)
+            provision_config[:disable_root_login]
+          else
+            true
+          end
         end
 
         # Whether to disable password authentication (defaults to true)
         def disable_password_authentication?
-          value = provision_config["disable_password_authentication"] || provision_config[:disable_password_authentication]
-          value.nil? ? true : value
+          if provision_config.key?("disable_password_authentication")
+            provision_config["disable_password_authentication"]
+          elsif provision_config.key?(:disable_password_authentication)
+            provision_config[:disable_password_authentication]
+          else
+            true
+          end
         end
 
         # Delegate everything else to Kamal's SSH config

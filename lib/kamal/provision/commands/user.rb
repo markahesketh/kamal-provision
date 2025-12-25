@@ -61,16 +61,16 @@ module Kamal
         def disable_root_login
           [
             :sudo, :sh, "-c",
-            "sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && " \
-            "grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin no' | sudo tee -a /etc/ssh/sshd_config > /dev/null"
+            "sed -i.bak 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && " \
+            "grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin no' | tee -a /etc/ssh/sshd_config > /dev/null"
           ]
         end
 
         def disable_password_authentication
           [
             :sudo, :sh, "-c",
-            "sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && " \
-            "grep -q '^PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | sudo tee -a /etc/ssh/sshd_config > /dev/null"
+            "sed -i.bak 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && " \
+            "grep -q '^PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | tee -a /etc/ssh/sshd_config > /dev/null"
           ]
         end
 

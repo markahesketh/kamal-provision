@@ -89,6 +89,8 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_equal "-c", result[2]
     assert_includes result[3], "PermitRootLogin no"
     assert_includes result[3], "/etc/ssh/sshd_config"
+    assert_includes result[3], "sed -i.bak", "should create backup before modifying sshd_config"
+    refute_includes result[3], "sudo tee", "should not have redundant sudo in fallback"
   end
 
   def test_disable_password_authentication_modifies_sshd_config
@@ -99,6 +101,8 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_equal "-c", result[2]
     assert_includes result[3], "PasswordAuthentication no"
     assert_includes result[3], "/etc/ssh/sshd_config"
+    assert_includes result[3], "sed -i.bak", "should create backup before modifying sshd_config"
+    refute_includes result[3], "sudo tee", "should not have redundant sudo in fallback"
   end
 
   def test_restart_sshd_tries_multiple_service_names
