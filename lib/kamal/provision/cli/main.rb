@@ -109,8 +109,12 @@ module Kamal
             execute(*user_cmd.add_to_docker_group(user))
           end
 
-          # Harden SSH configuration
-          harden_ssh(ssh_host)
+          # Harden SSH configuration (only if keys were configured to avoid lockout)
+          if configured_keys.empty?
+            say "    Skipping SSH hardening: no SSH keys configured", :yellow
+          else
+            harden_ssh(ssh_host, host)
+          end
 
           say "    Done provisioning #{host}", :green
         end
@@ -162,7 +166,7 @@ module Kamal
           end
         end
 
-        def harden_ssh(ssh_host)
+        def harden_ssh(ssh_host, host)
           ssh_config = PROVISIONER.ssh_config
           user_cmd = PROVISIONER.user
 
@@ -186,6 +190,8 @@ module Kamal
               execute(*user_cmd.restart_sshd)
             end
           end
+        rescue SSHKit::Runner::ExecuteError => e
+          raise ProvisionError, "Failed to harden SSH on #{host}: #{e.message}. Ensure key-based SSH access works before retrying."
         end
       end
     end

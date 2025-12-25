@@ -61,24 +61,28 @@ module Kamal
         def disable_root_login
           [
             :sudo, :sh, "-c",
-            "sed -i.bak 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && " \
-            "grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin no' | tee -a /etc/ssh/sshd_config > /dev/null"
+            "sed -i.bak 's/^[[:space:]]*#\\?[[:space:]]*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config && " \
+            "grep -q '^[[:space:]]*PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin no' | tee -a /etc/ssh/sshd_config > /dev/null"
           ]
         end
 
         def disable_password_authentication
           [
             :sudo, :sh, "-c",
-            "sed -i.bak 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && " \
-            "grep -q '^PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | tee -a /etc/ssh/sshd_config > /dev/null"
+            "sed -i.bak 's/^[[:space:]]*#\\?[[:space:]]*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config && " \
+            "grep -q '^[[:space:]]*PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication no' | tee -a /etc/ssh/sshd_config > /dev/null"
           ]
         end
 
         def restart_sshd
-          # Try different service names for sshd across different distributions
+          # Try different service names for sshd across different distributions and fail explicitly if none work
           [
             :sudo, :sh, "-c",
-            "systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null || service ssh restart 2>/dev/null || service sshd restart"
+            "if systemctl restart sshd 2>/dev/null; then echo 'sshd restarted using systemctl (sshd)'; " \
+            "elif systemctl restart ssh 2>/dev/null; then echo 'sshd restarted using systemctl (ssh)'; " \
+            "elif service ssh restart 2>/dev/null; then echo 'sshd restarted using service (ssh)'; " \
+            "elif service sshd restart 2>/dev/null; then echo 'sshd restarted using service (sshd)'; " \
+            "else echo 'Error: failed to restart sshd using systemctl or service' >&2; exit 1; fi"
           ]
         end
       end

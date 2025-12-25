@@ -90,6 +90,7 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_includes result[3], "PermitRootLogin no"
     assert_includes result[3], "/etc/ssh/sshd_config"
     assert_includes result[3], "sed -i.bak", "should create backup before modifying sshd_config"
+    assert_includes result[3], "[[:space:]]", "should handle whitespace variations in sshd_config"
     refute_includes result[3], "sudo tee", "should not have redundant sudo in fallback"
   end
 
@@ -102,6 +103,7 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_includes result[3], "PasswordAuthentication no"
     assert_includes result[3], "/etc/ssh/sshd_config"
     assert_includes result[3], "sed -i.bak", "should create backup before modifying sshd_config"
+    assert_includes result[3], "[[:space:]]", "should handle whitespace variations in sshd_config"
     refute_includes result[3], "sudo tee", "should not have redundant sudo in fallback"
   end
 
@@ -115,6 +117,7 @@ class Kamal::Provision::Commands::UserTest < Minitest::Test
     assert_includes result[3], "systemctl restart ssh"
     assert_includes result[3], "service ssh restart"
     assert_includes result[3], "service sshd restart"
+    assert_includes result[3], "exit 1", "should fail explicitly if no restart method works"
   end
 
   private

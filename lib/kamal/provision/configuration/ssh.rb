@@ -40,24 +40,12 @@ module Kamal
         def disable_root_login?
           return false if user == "root"
 
-          if provision_config.key?("disable_root_login")
-            provision_config["disable_root_login"]
-          elsif provision_config.key?(:disable_root_login)
-            provision_config[:disable_root_login]
-          else
-            true
-          end
+          fetch_provision_config("disable_root_login", true)
         end
 
         # Whether to disable password authentication (defaults to true)
         def disable_password_authentication?
-          if provision_config.key?("disable_password_authentication")
-            provision_config["disable_password_authentication"]
-          elsif provision_config.key?(:disable_password_authentication)
-            provision_config[:disable_password_authentication]
-          else
-            true
-          end
+          fetch_provision_config("disable_password_authentication", true)
         end
 
         # Delegate everything else to Kamal's SSH config
@@ -71,6 +59,18 @@ module Kamal
 
         def respond_to_missing?(method, include_private = false)
           kamal_ssh.respond_to?(method) || super
+        end
+
+        private
+
+        def fetch_provision_config(key, default)
+          if provision_config.key?(key)
+            provision_config[key]
+          elsif provision_config.key?(key.to_sym)
+            provision_config[key.to_sym]
+          else
+            default
+          end
         end
       end
     end
