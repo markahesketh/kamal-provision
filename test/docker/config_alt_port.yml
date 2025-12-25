@@ -17,4 +17,4 @@ builder:
 
 x-provision:
   keys:
-    - ~/.ssh/id_rsa.pub
+    - test/docker/test_key.pub

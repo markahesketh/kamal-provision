@@ -8,18 +8,22 @@ cleanup() {
   echo "==> Cleaning up..."
   cd "$SCRIPT_DIR"
   docker compose down --volumes --remove-orphans 2>/dev/null || true
+  # Kill ssh-agent if we started one
+  [ -n "$SSH_AGENT_PID" ] && kill "$SSH_AGENT_PID" 2>/dev/null || true
 }
 
 trap cleanup EXIT
 
 cd "$SCRIPT_DIR"
 
-# Ensure SSH key exists for tests
-if [ ! -f ~/.ssh/id_rsa ]; then
-  echo "==> Generating SSH key for tests..."
-  mkdir -p ~/.ssh
-  ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" -q
-fi
+# Use test key from repo
+TEST_KEY="$SCRIPT_DIR/test_key"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $TEST_KEY"
+
+# Add test key to ssh-agent for kamal-provision to use
+echo "==> Adding test key to ssh-agent..."
+eval "$(ssh-agent -s)" > /dev/null
+ssh-add "$TEST_KEY" 2>/dev/null
 
 echo "==> Building and starting test server..."
 docker compose up -d --build
@@ -29,7 +33,7 @@ sleep 2
 
 # Test SSH connection
 echo "==> Testing SSH connection as root on port 2222..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "echo 'SSH connection successful'"
+ssh $SSH_OPTS -p 2222 root@127.0.0.1 "echo 'SSH connection successful'"
 
 echo ""
 echo "==> Test 1: Provisioning with configured port (2222)..."
@@ -37,42 +41,42 @@ cd "$PROJECT_DIR"
 bundle exec exe/kamal-provision provision -c test/docker/config.yml
 
 echo "==> Verifying user was created..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "id kamal && groups kamal"
+ssh $SSH_OPTS -p 2222 root@127.0.0.1 "id kamal && groups kamal"
 
 echo "==> Testing SSH as provisioned user on port 2222..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 kamal@127.0.0.1 "echo 'SSH as kamal successful on port 2222!'"
+ssh $SSH_OPTS -p 2222 kamal@127.0.0.1 "echo 'SSH as kamal successful on port 2222!'"
 
 echo ""
 echo "==> Test 2: Provisioning with port fallback (config says 2200, should work)..."
 cd "$SCRIPT_DIR"
 
 # Remove the kamal user so we can test provisioning again
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "userdel -r kamal 2>/dev/null || true"
+ssh $SSH_OPTS -p 2222 root@127.0.0.1 "userdel -r kamal 2>/dev/null || true"
 
 cd "$PROJECT_DIR"
 bundle exec exe/kamal-provision provision -c test/docker/config_alt_port.yml
 
 echo "==> Verifying user was created via alternate port..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2200 root@127.0.0.1 "id kamal && groups kamal"
+ssh $SSH_OPTS -p 2200 root@127.0.0.1 "id kamal && groups kamal"
 
 echo "==> Testing SSH as provisioned user on port 2200..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2200 kamal@127.0.0.1 "echo 'SSH as kamal successful on port 2200!'"
+ssh $SSH_OPTS -p 2200 kamal@127.0.0.1 "echo 'SSH as kamal successful on port 2200!'"
 
 echo ""
 echo "==> Test 3: Provisioning with no keys configured (should use root's keys)..."
 cd "$SCRIPT_DIR"
 
 # Remove the kamal user so we can test provisioning again
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "userdel -r kamal 2>/dev/null || true"
+ssh $SSH_OPTS -p 2222 root@127.0.0.1 "userdel -r kamal 2>/dev/null || true"
 
 cd "$PROJECT_DIR"
 bundle exec exe/kamal-provision provision -c test/docker/config_no_keys.yml
 
 echo "==> Verifying user was created with root's keys..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@127.0.0.1 "id kamal && groups kamal"
+ssh $SSH_OPTS -p 2222 root@127.0.0.1 "id kamal && groups kamal"
 
 echo "==> Testing SSH as provisioned user (using root's keys)..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 kamal@127.0.0.1 "echo 'SSH as kamal successful using root keys!'"
+ssh $SSH_OPTS -p 2222 kamal@127.0.0.1 "echo 'SSH as kamal successful using root keys!'"
 
 echo ""
 echo "==> All tests passed!"
